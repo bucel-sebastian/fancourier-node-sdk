@@ -29,7 +29,7 @@
 |:---|:---|
 | ⚡ **Zero runtime dependencies** — native `fetch`, Node.js >= 20 | 🧩 **Full documented API coverage** across seven namespaces |
 | 🔐 **Automatic auth** — lazy login, token cache, single-flight refresh and one retry on `401` | 🧾 **PHP-style bracket encoding** — send the `info[service]`, `awbs[]` query bodies the API expects |
-| 📦 **Dual ESM + CJS builds** with bundled type declarations | 🧪 **36 unit tests** plus an opt-in live-API integration suite |
+| 📦 **Dual ESM + CJS builds** with bundled type declarations | 🧪 **38 unit tests** plus an opt-in live-API integration suite |
 | 🏷️ **Binary labels** — PDF, HTML and ZPL as `Buffer`/`string` | 🧯 **Typed errors** for `400`, `401`, `403`, `404`, `429` and `5xx` |
 
 ## Installation

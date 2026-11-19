@@ -1,5 +1,5 @@
 /** SDK version, kept in sync with package.json. */
-export const VERSION = '0.1.0';
+export const VERSION = '1.0.0';
 
 /** Production FanCourier API origin (no trailing slash). */
 export const PROD_BASE_URL = 'https://api.fancourier.ro';
