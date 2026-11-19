@@ -1,17 +1,19 @@
 <div align="center">
 
-<!-- Static shield.io badge, no hosted assets required. -->
+<!-- wordmark: pure shields.io static badge, no hosted assets needed -->
 ![](https://img.shields.io/badge/FANCOURIER-Node.js%20SDK-00529B?style=for-the-badge&logo=nodedotjs&logoColor=white&labelColor=003B70)
 
 # FanCourier Courier SDK for Node.js
 
-**TypeScript-first client for the FanCourier API (Romania).**
+**TypeScript-first client for the FanCourier courier API (Romania).**
 
 *AWBs · Tariffs · Labels · Pickup points · Geography · Courier orders · Tracking · Reports*
 
-[![Node >= 20](https://img.shields.io/badge/node-%E2%89%A5%2020-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org)
+[![npm version](https://img.shields.io/npm/v/fancourier-node-sdk.svg?color=cb3837)](https://www.npmjs.com/package/fancourier-node-sdk)
+[![node >= 20](https://img.shields.io/badge/node-%E2%89%A5%2020-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org)
 [![CI](https://github.com/bucel-sebastian/fancourier-node-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/bucel-sebastian/fancourier-node-sdk/actions/workflows/ci.yml)
-[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/license/mit)
+[![downloads](https://img.shields.io/npm/dm/fancourier-node-sdk.svg)](https://www.npmjs.com/package/fancourier-node-sdk)
+[![license: MIT](https://img.shields.io/npm/l/fancourier-node-sdk.svg)](https://opensource.org/license/mit)
 
 </div>
 
@@ -19,7 +21,7 @@
 
 ## Contents
 
-[Features](#features) · [Installation](#installation) · [Quickstart](#quickstart) · [Resources](#resources) · [Examples](#examples) · [Configuration](#configuration) · [Authentication](#authentication) · [Error handling](#error-handling) · [Testing](#testing) · [License](#license)
+[Features](#features) · [Installation](#installation) · [Quickstart](#quickstart) · [Guides](#guides) · [Error handling](#error-handling) · [Configuration](#configuration) · [Testing and CI](#testing-and-ci) · [Contributing](#contributing) · [License](#license)
 
 ---
 
@@ -27,10 +29,10 @@
 
 | | |
 |:---|:---|
-| ⚡ **Zero runtime dependencies** — native `fetch`, Node.js >= 20 | 🧩 **Full documented API coverage** across seven namespaces |
-| 🔐 **Automatic auth** — lazy login, token cache, single-flight refresh and one retry on `401` | 🧾 **PHP-style bracket encoding** — send the `info[service]`, `awbs[]` query bodies the API expects |
+| ⚡ **Zero runtime dependencies** — native `fetch`, Node.js >= 20 | 🧩 **Full documented API coverage** across six namespaces (`awb`, `geography`, `pickupPoints`, `orders`, `reports`, `services`) |
+| 🔐 **Automatic auth** — lazy login, token cache, single-flight refresh and one retry on `401` | 🧾 **PHP-style bracket encoding** — pass plain nested objects; the SDK sends the `info[service]=...`, `awbs[]=...` bodies the API expects |
+| 🏷️ **Binary labels** — PDF, HTML and ZPL as `Buffer`/`string` | 🧯 **Typed error hierarchy** — HTTP status mapped to `ValidationError`, `AuthenticationError`, `RateLimitError`, … |
 | 📦 **Dual ESM + CJS builds** with bundled type declarations | 🧪 **38 unit tests** plus an opt-in live-API integration suite |
-| 🏷️ **Binary labels** — PDF, HTML and ZPL as `Buffer`/`string` | 🧯 **Typed errors** for `400`, `401`, `403`, `404`, `429` and `5xx` |
 
 ## Installation
 
@@ -55,24 +57,24 @@ const services = await client.services.list();
 console.log(services.map((service) => service.name));
 ```
 
-Credentials are passed directly to the constructor. The SDK does not load `.env` files or read environment variables. `FancourierClient` is also exported as the underlying class name.
+> **Tip** Credentials are passed directly to the constructor. The SDK never loads `.env` files or reads environment variables. `FancourierClient` is also exported as the underlying class name.
 
-Authentication is performed lazily on the first request. The token is cached and refreshed automatically.
+Auth is handled for you: the token is fetched lazily on the first call, cached, refreshed before it expires, and reacquired once after a `401`.
 
-## Resources
+## Guides
 
-| Namespace | What it covers |
+| Guide | What it covers |
 |---|---|
-| `client.awb` | Create internal/export AWBs, delete AWBs, download labels, estimate tariffs |
-| `client.geography` | Romanian counties, localities, streets; export countries and external geography |
-| `client.pickupPoints` | FANbox, PayPoint and FAN-office locations |
-| `client.orders` | Create/cancel courier pickup orders, list orders, order events and tracking |
-| `client.reports` | Shipping slips, AWB events, AWB tracking, bank transfers, confirmations, branches |
-| `client.services` | Delivery services and their available options |
+| [AWB lifecycle](#awb-lifecycle) | Create internal/export AWBs, estimate tariffs, download labels, cancel |
+| [Geography and pickup points](#geography-and-pickup-points) | Counties, localities, streets, countries, FANbox/PayPoint/FAN office |
+| [Courier orders](#courier-orders) | Create/cancel pickup orders, list orders, order events and tracking |
+| [Tracking and reports](#tracking-and-reports) | AWB tracking, shipping slips, bank transfers, confirmations, branches |
+| [Configuration](#configuration) | All client options, base URLs, timeouts, `fetchImpl` |
+| [Error handling](#error-handling) | Error hierarchy, API envelopes, retry behavior |
 
-The low-level `client.request()` escape hatch is available for endpoints added to the API after this release.
+> **Tip** The full method reference is generated with `npm run docs` into `docs/api/index.html` (open it locally in a browser).
 
-## Examples
+## AWB lifecycle
 
 ### Create an internal AWB
 
@@ -109,12 +111,12 @@ const [awb] = await client.awb.create({
 console.log(awb.awbNumber, awb.tariff);
 ```
 
-`client.awb.createInternal()` is the explicit name; `create()` is an alias.
+`client.awb.createInternal()` is the explicit name; `create()` is an alias. `clientId` is injected automatically unless you override it in the payload.
 
 ### Create an export AWB
 
 ```ts
-const [awb] = await client.awb.createExternal({
+const [exportAwb] = await client.awb.createExternal({
   shipments: [
     {
       info: {
@@ -175,7 +177,13 @@ const html = await client.awb.labelHtml({ awbs: [awb.awbNumber!] });
 const zpl = await client.awb.labelZpl({ awbs: [awb.awbNumber!] }, { dpi: 203 });
 ```
 
-### Look up geography and pickup points
+### Cancel an AWB
+
+```ts
+await client.awb.delete(2233300120284);
+```
+
+## Geography and pickup points
 
 ```ts
 const counties = await client.geography.counties();
@@ -189,10 +197,12 @@ const streets = await client.geography.streets({
 
 const fanboxes = await client.pickupPoints.list({ type: 'fanbox' });
 const paypoints = await client.pickupPoints.list({ type: 'paypoint' });
-const point = await client.pickupPoints.get('FAN0033');
+const office = await client.pickupPoints.get('FAN0033');
 ```
 
-### Create a courier order
+Export geography is available through `client.geography.countries()`, `externalCounties()` and `externalLocalities()`.
+
+## Courier orders
 
 ```ts
 const order = await client.orders.create({
@@ -208,9 +218,13 @@ const order = await client.orders.create({
 });
 
 console.log(order.id);
+
+await client.orders.delete(order.id);
 ```
 
-### Track AWBs and read reports
+Order reports, events and tracking are available through `client.orders.reports()`, `events()` and `tracking()`.
+
+## Tracking and reports
 
 ```ts
 const tracking = await client.reports.trackAwb({
@@ -228,12 +242,35 @@ const transfers = await client.reports.bankTransfers({ date: '2026-11-19' });
 const confirmations = await client.reports.awbConfirmations({ awb: [2233300120284] });
 ```
 
-### Cancel an AWB or order
+`client.reports` also exposes `awbEvents()` and `branches()`.
+
+## Error handling
+
+Every SDK error extends `FancourierError` and is chosen by HTTP status. The API's error envelope is unwrapped onto `.message`/`.code`; the HTTP status is on `.status` and the parsed body on `.raw`.
+
+| | Class | Raised on |
+|:---:|---|---|
+| 🧩 | `FancourierError` | Base class — also timeouts and JSON parse failures |
+| 🚫 | `ValidationError` | 400 — malformed request (details in `.raw`) |
+| 🔑 | `AuthenticationError` | 401 — invalid credentials/token |
+| 🔒 | `PermissionError` | 403 — authenticated but not allowed |
+| ❓ | `NotFoundError` | 404 — resource does not exist |
+| ⏳ | `RateLimitError` | 429 — exposes `.retryAfter` (seconds) |
+| 🔥 | `ServerError` | 5xx — API failed to process the request |
 
 ```ts
-await client.awb.delete(2233300120284);
-await client.orders.delete(17895017);
+import { RateLimitError, ValidationError } from 'fancourier-node-sdk';
+
+try {
+  await client.awb.create(payload);
+} catch (err) {
+  if (err instanceof ValidationError) console.error(err.message, err.raw);
+  else if (err instanceof RateLimitError) console.error('retry after', err.retryAfter, 's');
+  else throw err;
+}
 ```
+
+The SDK does not retry rate limits or server errors automatically; retry those in application code after the indicated delay.
 
 ## Configuration
 
@@ -250,69 +287,13 @@ Options accepted by `new Fancourier(...)`:
 | `tokenExpiresAt` | `string \| Date` | — | Expiry for a pre-existing token |
 | `fetchImpl` | `typeof fetch` | `globalThis.fetch` | Injectable fetch for tests or custom runtimes |
 
-Invalid or API-level failures (HTTP `200` with `status: "error"`) are surfaced as typed errors.
-
-## Authentication
-
-FanCourier uses a bearer token obtained from `POST /login`:
-
-1. The first request performs the login with `username` and `password`.
-2. The token and its `expiresAt` value are cached.
-3. Concurrent calls share one in-flight login.
-4. The token is refreshed 60 seconds before expiry.
-5. A `401` response clears the token, logs in again and retries the request exactly once.
-
-Manual control is available:
-
-```ts
-const token = await client.ensureToken(); // login if needed
-client.setToken(token, '2026-11-20 06:00:00');
-client.clearToken();
-const fresh = await client.login(); // force a new login
-```
-
 Tokens can be persisted between processes and passed back through the `token` and `tokenExpiresAt` constructor options.
 
-## Error handling
-
-Every SDK error extends `FancourierError`; the HTTP status is on `.status`, the parsed body on `.raw`, and the optional cause on `.cause`.
-
-| Class | Raised on |
-|---|---|
-| `FancourierError` | Base class; also timeouts and JSON parse failures |
-| `ValidationError` | `400` — malformed request |
-| `AuthenticationError` | `401` — invalid credentials or expired token |
-| `PermissionError` | `403` — authenticated but not allowed |
-| `NotFoundError` | `404` — resource does not exist |
-| `RateLimitError` | `429` — exposes `.retryAfter` (seconds) |
-| `ServerError` | `5xx` — FanCourier failed to process the request |
-
-```ts
-import { RateLimitError, ValidationError } from 'fancourier-node-sdk';
-
-try {
-  await client.awb.create(payload);
-} catch (error) {
-  if (error instanceof ValidationError) {
-    console.error(error.message, error.raw);
-  } else if (error instanceof RateLimitError) {
-    console.error('retry after', error.retryAfter, 'seconds');
-  } else {
-    throw error;
-  }
-}
-```
-
-The SDK does not retry rate limits or server errors automatically; retry those in application code after the indicated delay.
-
-## Testing
+## Testing and CI
 
 ```bash
-npm test                # unit suite (mocked fetch, no network)
-npm run test:coverage   # unit suite with v8 coverage
-npm run typecheck
-npm run lint
-npm run build
+npm test                # unit suite (vitest, mocked fetch, no network)
+npm run test:coverage   # unit suite + v8 coverage
 ```
 
 The live-API integration suite is opt-in and skips itself without credentials. It is the only part of the project that reads environment variables; normal SDK usage never does:
@@ -326,17 +307,19 @@ npm run test:integration
 
 Set `FANCOURIER_BASE_URL` to target a proxy or sandbox. The integration suite is read-only: it authenticates, lists catalogues and estimates a tariff. It never creates or cancels real AWBs.
 
-CI (`.github/workflows/ci.yml`) runs lint, typecheck and the unit suite on Node 20, 22 and 24. The integration job runs only when the `FANCOURIER_CLIENT_ID`, `FANCOURIER_USER` and `FANCOURIER_PASSWORD` repository secrets are configured.
+CI (`.github/workflows/ci.yml`) runs lint, typecheck and the unit suite on Node 20, 22 and 24 for every push/PR; the integration job runs only when the `FANCOURIER_CLIENT_ID`, `FANCOURIER_USER` and `FANCOURIER_PASSWORD` repository secrets are configured.
 
 ## Contributing
 
-Bug reports and feature requests are welcome in [GitHub Issues](https://github.com/bucel-sebastian/fancourier-node-sdk/issues). Before opening a pull request, run `npm run lint`, `npm run typecheck` and `npm test`.
+Bug reports and feature requests are welcome in [GitHub Issues](https://github.com/bucel-sebastian/fancourier-node-sdk/issues); pull requests are encouraged — run `npm run lint`, `npm run typecheck` and `npm test` before opening one.
+
+## License
+
+Released under the [MIT](LICENSE) license.
 
 ---
 
 <div align="center">
-
-Released under the [MIT](LICENSE) license.
 
 `npm install fancourier-node-sdk`
 
