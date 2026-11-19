@@ -1,0 +1,73 @@
+{
+  "name": "fancourier-node-sdk",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for the FanCourier API",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "CHANGELOG.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run test/integration",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "docs": "typedoc",
+    "prepublishOnly": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bucel-sebastian/fancourier-node-sdk.git"
+  },
+  "keywords": [
+    "fancourier",
+    "courier",
+    "shipping",
+    "awb",
+    "romania",
+    "sdk",
+    "typescript"
+  ],
+  "author": "Sebastian Bucel",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bucel-sebastian/fancourier-node-sdk/issues"
+  },
+  "homepage": "https://github.com/bucel-sebastian/fancourier-node-sdk#readme",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.6.5",
+    "@vitest/coverage-v8": "^5.0.4",
+    "eslint": "^10.12.0",
+    "tsup": "^8.5.1",
+    "typedoc": "^0.28.20",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.2",
+    "vitest": "^5.0.4"
+  }
+}

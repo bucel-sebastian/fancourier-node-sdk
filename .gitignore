@@ -1,0 +1,13 @@
+node_modules/
+dist/
+coverage/
+docs/api/
+*.tsbuildinfo
+*.tgz
+.env
+.env.*
+.DS_Store
+
+# Local API reference material (not part of the package).
+RO_Fancourier_API_*.pdf
+fancourier-api-main/
